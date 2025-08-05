@@ -1,0 +1,46 @@
+version: '3.8'
+
+# Define custom network
+networks:
+  ecom-network:
+    driver: bridge
+
+# Define persistent volume for PostgreSQL data
+volumes:
+  ecomdb_data:
+
+services:
+  # PostgreSQL database service
+  db:
+    container_name: ecom-db-container
+    image: postgres:14.18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ecomdb
+      TZ: Asia/Kolkata  # Set timezone (optional but good practice)
+    ports:
+      - "5432:5432"
+    volumes:
+      - ecomdb_data:/var/lib/postgresql/data
+    networks:
+      - ecom-network
+
+  # Spring Boot application service
+  app:
+    container_name: ecom-application-container
+    image: sushankk/ecom-application:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - ecom-network
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/ecomdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: prod
+      TZ: Asia/Kolkata  # Set timezone for application container
